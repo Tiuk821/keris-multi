@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penampil 3D Interaktif (Three.js)</title>
+    
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; /* Mencegah scrollbar */
+            font-family: sans-serif; 
+        }
+        #container3D { 
+            width: 100vw; 
+            height: 100vh; 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+        }
+
+        /* --- TOMBOL HOME (POJOK KIRI BAWAH) --- */
+        #btn-home {
+            position: fixed;
+            bottom: 20px; /* PINDAH KE BAWAH */
+            left: 20px;
+            width: 50px; 
+            height: 50px;
+            background: white; 
+            color: #333;
+            border-radius: 50%;
+            text-decoration: none; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            font-size: 24px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 1001; /* Di atas canvas 3D */
+            border: 2px solid #ddd;
+            transition: transform 0.2s;
+        }
+        #btn-home:hover { 
+            background: #f0f0f0; 
+            transform: scale(1.05); 
+        }
+
+        /* Panel Kontrol */
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+            padding: 15px 20px;
+            z-index: 10;
+            color: white;
+            width: 80%;
+            max-width: 400px;
+        }
+        .slider-group { 
+            margin-bottom: 10px; 
+        }
+        .slider-group label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: bold; 
+        }
+        input[type="range"] { 
+            width: 100%; 
+        }
+    </style>
+</head>
+<body>
+    
+    <a id="btn-home" href="https://tiuk821.github.io/keris-multi/" title="Kembali ke Menu Utama">🏠</a>
+
+    <div id="container3D"></div>
+
+    <div id="controls">
+        <div class="slider-group">
+            <label for="scale-slider">Ukuran (Scale)</label>
+            <input type="range" id="scale-slider" min="0.1" max="3" value="0.5" step="0.05">
+        </div>
+        <div class="slider-group">
+            <label for="rotY-slider">Rotasi (Putar)</label>
+            <input type="range" id="rotY-slider" min="0" max="360" value="0" step="1">
+        </div>
+    </div>
+
+    <script type="module">
+        // Import library
+        import * as THREE from "https://cdn.skypack.dev/three@0.129.0/build/three.module.js";
+        import { OrbitControls } from "https://cdn.skypack.dev/three@0.129.0/examples/jsm/controls/OrbitControls.js";
+        import { GLTFLoader } from "https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/GLTFLoader.js";
+
+        let object; 
+
+        // === 1. SETUP DASAR ===
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xffffff); 
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer(); 
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.getElementById("container3D").appendChild(renderer.domElement);
+
+        // === 2. MEMUAT MODEL 3D ===
+        
+        // GANTI 'dark_keris.glb' dengan path file kamu
+        const modelPath = 'red_skull_keris.glb'; 
+        
+        const loader = new GLTFLoader();
+        loader.load(
+          modelPath,
+          function (gltf) {
+            object = gltf.scene;
+            
+            object.scale.set(0.5, 0.5, 0.5); 
+            object.rotation.z = THREE.MathUtils.degToRad(-90);
+            scene.add(object);
+            console.log("✅ Model 3D berhasil dimuat!");
+          },
+          (xhr) => console.log((xhr.loaded / xhr.total * 100) + '% loaded'),
+          (error) => console.error("❌ Gagal memuat model 3D:", error)
+        );
+
+        // === 3. POSISI KAMERA & CAHAYA ===
+        camera.position.z = 2;
+        
+        const topLight = new THREE.DirectionalLight(0xffffff, 1);
+        topLight.position.set(500, 500, 500);
+        scene.add(topLight);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5); 
+        scene.add(ambientLight);
+
+        // === 4. KONTROL KAMERA ===
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; 
+
+        // === 5. KONTROL UI ===
+        const scaleSlider = document.getElementById('scale-slider');
+        const rotYSlider = document.getElementById('rotY-slider');
+
+        scaleSlider.addEventListener('input', (e) => {
+            if (object) { 
+                const scale = parseFloat(e.target.value);
+                object.scale.set(scale, scale, scale);
+            }
+        });
+
+        rotYSlider.addEventListener('input', (e) => {
+            if (object) { 
+                const rotationY = parseFloat(e.target.value);
+                object.rotation.y = THREE.MathUtils.degToRad(rotationY); 
+            }
+        });
+
+        // === 6. RENDER LOOP ===
+        function animate() {
+          requestAnimationFrame(animate);
+          controls.update(); 
+          renderer.render(scene, camera);
+        }
+
+        window.addEventListener("resize", () => {
+          camera.aspect = window.innerWidth / window.innerHeight;
+          camera.updateProjectionMatrix();
+          renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        animate();
+    </script>
+</body>
+</html>
