@@ -1,0 +1,6 @@
+{
+  "numTargets": 1,
+  "targets": [
+    { "name": "kartu_baru", "index": 0 }
+  ]
+}
